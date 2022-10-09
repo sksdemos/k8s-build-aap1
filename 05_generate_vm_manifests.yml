@@ -1,0 +1,21 @@
+---
+# This Playbook generates complex dictionaries required by the libvirt_setup and cloud_init roles
+# This if manually done will be a tedious and an error prone process
+#
+# ASSUMPTIONS:
+# Utilizes configs/vms-config.yml to read in the required variables and dictionaries
+# configs/vms-config.yml provides the bare minimum variables used by the various Jinja2 template to generate the required mnifests
+#
+
+- name: Creating VM manifests
+  hosts: localhost
+  become: no
+  gather_facts: no
+  vars_files:
+    - 'configs/vms-config.yml'
+
+  tasks:
+    - name: Starting libvirt setup
+      include_role:
+        name: vmg
+

@@ -1,0 +1,5 @@
+configs/cloudinit-config.yml
+configs/libvirt-config.yml
+do-not-delete/
+cloud_images/
+roles/

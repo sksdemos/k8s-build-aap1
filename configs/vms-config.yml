@@ -1,0 +1,38 @@
+#-----------------------------------------------------------#
+# libvirt_setup and cloud_init VM snd DNS pecific variables #
+#-----------------------------------------------------------#
+
+vmg_nw_name: k8s-net
+vmg_nw_bridge: br0-k8s
+vmg_nw_gateway: 10.60.0.1
+vmg_nw_mask: 255.0.0.0
+vmg_nw_dhcp_start: 10.60.0.51
+vmg_nw_dhcp_end: 10.60.0.254
+
+vmg_vm_domain: k8stest.local
+vmg_vm_image_link: https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-20220125.1.x86_64.qcow2
+vmg_vm_first_ip_octet: 10
+vmg_vm_network: 10.60.0.0
+vmg_vm_netmask: 255.0.0.0
+vmg_vm_root_passwd: letmein
+vmg_vm_os_variant: rhel8.0
+vmg_vm_nm_controlled_network: 'yes'
+vmg_vm_storage_pool_name: k8s-store
+
+vmg_vms_infra:
+  'k8s-master':
+     count: 1
+     cpus: 2
+     memory: 2048
+     root_disk_size: 20G
+     hostname_spec: master
+     alphabet: no
+     snapshot: no
+  'k8s-worker':
+     count: 2
+     cpus: 2
+     memory: 2048
+     root_disk_size: 40G
+     hostname_spec: worker
+     alphabet: no
+     snapshot: no

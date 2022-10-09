@@ -1,0 +1,6 @@
+- import_playbook: 01_download_roles.yml
+- import_playbook: 03_generate_ssh_keys.yml
+- import_playbook: 05_generate_vm_manifests.yml
+- import_playbook: 07_libvirt_configuration.yml
+- import_playbook: 09_create_vms.yml
+- import_playbook: 11_inject_ssh_keys.yml
