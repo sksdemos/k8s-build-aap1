@@ -18,6 +18,7 @@ vmg_vm_root_passwd: letmein
 vmg_vm_os_variant: rhel8.0
 vmg_vm_nm_controlled_network: 'yes'
 vmg_vm_storage_pool_name: k8s-store
+vmg_vm_recreate: true
 
 vmg_vms_infra:
   'k8s-master':
