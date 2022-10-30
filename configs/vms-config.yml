@@ -21,19 +21,29 @@ vmg_vm_storage_pool_name: k8s-store
 vmg_vm_recreate: true
 
 vmg_vms_infra:
+  'utility':
+     count: 1
+     cpus: 1
+     memory: 2048
+     root_disk_size: 20G
+     hostname_spec: utility
+     alphabet: False
+     snapshot: False
   'k8s-master':
      count: 1
      cpus: 2
      memory: 2048
      root_disk_size: 20G
      hostname_spec: master
-     alphabet: no
-     snapshot: no
+     alphabet: False
+     snapshot: False
+     is_k8s_master: True
   'k8s-worker':
      count: 2
      cpus: 2
      memory: 2048
      root_disk_size: 40G
      hostname_spec: worker
-     alphabet: no
-     snapshot: no
+     alphabet: False
+     snapshot: False
+     is_k8s_worker: True
