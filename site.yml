@@ -4,3 +4,4 @@
 - import_playbook: 07_libvirt_configuration.yml
 - import_playbook: 09_create_vms.yml
 - import_playbook: 11_inject_ssh_keys.yml
+- import_playbook: 13_k8s_vms_configuration.yml

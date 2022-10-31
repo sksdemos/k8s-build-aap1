@@ -1,0 +1,80 @@
+#---- k8s Installation Parameters ----#
+
+# Exact version of Kubernates packages
+k8s_packages: 
+  - 'kubelet-1.21.2' 
+  - 'kubeadm-1.21.2'
+  - 'kubectl-1.21.2'
+
+k8s_kubectl: kubectl-1.21.2
+
+# NOTES:
+# Set with the exact version of k8s that needs to be installed
+
+
+# This pod network cidr will be used by the kubeadm init command to bbootstrap the control plane
+pod_nw_cidr: '192.168.0.0/16'
+service_nw_cidr: '172.30.0.0/16'
+
+
+#---- Container Runtime Parameters ----#
+
+# Variable specifying container runtime interface to be used. 
+cri: 'cri-o'
+
+# NOTES:
+# Can hold three values 'docker' 'containerd' or 'cri-o'
+# You definately dont want to set the value as 'docker'. Docker SHIM is depricated and docker CE has too many packages
+
+
+
+# Set these for containerd container runtime interface
+containerd_url: https://download.docker.com/linux/centos/8/x86_64/stable/Packages/containerd.io-1.4.9-3.1.el8.x86_64.rpm
+
+# NOTES:
+# Will be used only when cri: 'containerd'. Else it is ignored
+
+
+# Set these for CRI-O container runtime interface. 
+os: CentOS_8
+version: '1.21:1.21.2'
+
+# NOTES:
+# Will be used only when cri: 'cri-o'. Else it is ignored
+# CRI-O major version needs to be the same version as Kubernetes major version. Refer to the documentation
+# https://kubernetes.io/docs/setup/production-environment/container-runtimes/#cri-o
+# WARNING: Failure to adhere to this will result in Cluster install failure
+
+
+
+
+#---- k8s Container Network Addon ----#
+
+# Variable to specify container networking addons
+cni_url: https://docs.projectcalico.org/manifests/calico.yaml
+
+
+# NOTES:
+# This variable is for container networking addons like calico, flannel, weave etc to name a few
+# Refer to the documentation. https://kubernetes.io/docs/concepts/cluster-administration/addons/
+# This tool will make use of cni_url to setup third-party networking and networking policies for Kubernetes
+#
+# Example:
+#
+# Calico URL: https://docs.projectcalico.org/manifests/calico.yaml
+# Flannel URL: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+
+
+
+
+#---- Octant k8s Dashboard URL ----#
+octant_url: https://github.com/vmware-tanzu/octant/releases/download/v0.24.0/octant_0.24.0_Linux-64bit.rpm
+
+# IP of the machine that Octant listens to
+octant_listener_ipaddr: '0.0.0.0'
+
+# Hosts allowed to access Octant Dashboard (Use for security)
+octant_accepted_hosts: '0.0.0.0'
+
+# Port used by octant Web application
+octant_port: 5200

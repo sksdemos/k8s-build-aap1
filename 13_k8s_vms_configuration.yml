@@ -1,0 +1,177 @@
+---
+# This Play does a hygiene check on the cluster machines
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+#
+
+- name: Validating cluster machines
+  hosts: localhost
+  become: no
+  vars_files:
+    - 'configs/password.yml'
+    - 'configs/vms-config.yml'
+
+  vars:
+    ansible_become_password: "{{ sudo_password }}"
+
+  tasks:
+    - name: Checking master
+      assert:
+        that:
+          - item.value.count|int > 0 
+          - item.value.count|int % 2 != 0
+        msg: "k8s masters count should be a positive odd number i.e. 1, 3, 5 etc"
+      loop: "{{ lookup('dict',vmg_vms_infra, wantlist=True) }}"
+      when: item.key | regex_search('(master)') == 'master'
+      loop_control:
+        label: output
+
+
+    - name: Checking workers
+      assert:
+        that:
+          - item.value.count|int > 0 
+        msg: "k8s workers count should be > 0"
+      loop: "{{ lookup('dict',vmg_vms_infra, wantlist=True) }}"
+      when: item.key | regex_search('(worker)') == 'worker'
+      loop_control:
+        label: output
+
+
+
+# This Playbook creates an in-memory inventory used in the susequent play
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+#
+
+- name: Creating in-memory inventory
+  hosts: localhost
+  become: no
+  vars_files:
+    - 'configs/password.yml'
+    - 'configs/cloudinit-config.yml'
+
+  vars:
+    ansible_become_password: "{{ sudo_password }}"
+
+  tasks:
+    - name: Adding controlplane hosts to group 
+      add_host:
+        name: '{{ item.value.vm_static_ip }}'
+        groups: cluster
+        ansible_user: '{{ ssh_user_name }}'
+      loop: "{{ lookup('dict',cloud_vms_info, wantlist=True) }}"
+      when: item.key | regex_search('(master|worker)') in ['master','worker']
+      loop_control:
+        label: output
+
+
+
+# Objective is to configure k8s VMs before installing the k8s package
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+# Playbook is not supposed run the libvirt_infra role except for preflight checks under the regular run mode
+# libvirt dictionary is being overriden under play vars
+#
+# NOTE: This playbook must be run from a shell script with the --tags delete_network,create_network
+#
+
+
+- name: Starting with Kubernetes configuration
+  hosts: cluster
+  gather_facts: no
+  vars_files:
+    - 'configs/k8s-config.yml'
+  tasks:
+    - name: Presistently adding kernel modules for k8s
+      copy:
+        content: |
+          overlay
+          br_netfilter
+        dest: /etc/modules-load.d/k8s.conf
+        mode: '0644'
+
+    - name: Update Kernel to allow a process to bind to a non-local IP address
+      copy:
+        content: |
+          net.ipv4.ip_nonlocal_bind=1
+        dest: /etc/sysctl.d/ip_nonlocal_bind.conf
+        mode: '0644'
+
+    - name: Running modprobe for kernel modules for k8s
+      modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+          - 'overlay'
+          - 'br_netfilter'
+
+    - name: Updating necessary sysctl parameters for k8s 
+      sysctl:
+        name: "{{ item }}" 
+        value: '1'
+        sysctl_set: yes
+        state: present
+        reload: yes
+      loop:
+        - 'net.bridge.bridge-nf-call-ip6tables'
+        - 'net.bridge.bridge-nf-call-iptables'
+        - 'net.ipv4.ip_forward'
+        - 'net.ipv4.ip_nonlocal_bind'
+
+    - name: Add k8s repositories to the cluster nodes
+      yum_repository:
+        name: kubernetes
+        description: Kubernetes package repository
+        file: kubernetes
+        baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-$basearch
+        enabled: yes
+        gpgcheck: yes
+        gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+        repo_gpgcheck: yes
+        exclude: 'kubelet kubeadm kubectl'
+        state: present
+
+    - name: Update SELinux Configuration
+      lineinfile:
+        path: /etc/selinux/config
+        regexp: "^SELINUX=enforcing" 
+        line: "SELINUX=permissive"
+        state: present
+        backup: yes
+
+    - name: Drop SELinux in Permissive mode
+      command: setenforce 0
+      changed_when: false
+
+    - name: Installing and configuring Containerd
+      import_tasks: tasks/configure_docker.yml
+      when: cri == 'docker'
+
+    - name: Installing and configuring Containerd
+      import_tasks: tasks/configure_containerd.yml
+      when: cri == 'containerd'
+
+    - name: Installing and configuring CRI-O
+      import_tasks: tasks/configure_cri-o.yml
+      when: cri == 'cri-o'
+
+    - name: Installing Kubernetes packages
+      yum:
+        name: "{{ k8s_packages }}"
+        disable_excludes: kubernetes
+        state: installed
+
+    - name: Start and enable Kubelet service
+      service:
+        name: kubelet
+        state: started
+        enabled: true
+
+
+    # NOTE: at this point the kubelet service is now in a crashloop and restarting every few seconds, 
+    #       as it waits for kubeadm to tell it what to do
+

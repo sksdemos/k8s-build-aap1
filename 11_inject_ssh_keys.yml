@@ -99,7 +99,7 @@
           ask_pass = no
           forks = 20
           remote_user = {{ ssh_user_name }}
-          private_key_file = /home/{{ loggedin_user }}/ansible-basic/do-not-delete/ansible_vms_rsa
+          private_key_file = ./do-not-delete/ansible_vms_rsa
 
           [privilege_escalation]
           become = yes

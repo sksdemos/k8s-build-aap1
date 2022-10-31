@@ -1,0 +1,45 @@
+- name: Add the official Docker CE package repository
+  get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d
+    force: yes
+
+    # Docker Components specific steps
+- name: Installing Docker runtime components
+  yum:
+    name:
+      - docker-ce 
+      - docker-ce-cli 
+      - fuse-overlayfs
+
+- name: Create docker folder
+  file:
+    path: /etc/docker
+    state: directory
+    mode: "u=rw,g=wx,o=rwx"
+
+- name: Configure cgroup for Docker daemon 
+  copy:
+    dest: "/etc/docker/daemon.json"
+    content: |
+      {
+        "exec-opts": ["native.cgroupdriver=systemd"],
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "100m"
+        },
+        "storage-driver": "overlay2"
+      }
+    mode: '0644'
+
+- name: Enable and start Docker
+  service:
+    name: docker
+    enabled: yes
+    state: started
+
+#- name: add your login user to the Docker group
+#  user:
+#    name: '{{ non_admin }}'
+#    groups: docker
+#    append: yes

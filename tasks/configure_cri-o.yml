@@ -1,0 +1,22 @@
+- name: Download CRI-O repository 1
+  get_url:
+    url: https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/{{ os }}/devel:kubic:libcontainers:stable.repo
+    dest: /etc/yum.repos.d
+    force: yes
+
+- name: Download CRI-O repository 2
+  get_url:
+    url: https://download.opensuse.org/repositories/devel:kubic:libcontainers:stable:cri-o:{{ version }}/{{ os }}/devel:kubic:libcontainers:stable:cri-o:{{ version }}.repo
+    dest: /etc/yum.repos.d
+    force: yes
+
+- name: Installing CRI-O
+  yum:
+    name: cri-o
+    state: installed
+
+- name: Start and enable CRI-O
+  service:
+    name: crio
+    state: started
+    enabled: true

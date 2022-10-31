@@ -1,0 +1,24 @@
+- name: Install container runtime interface Containerd
+  yum:
+    name: "{{ containerd_url }}"
+    disable_gpg_check: yes
+    state: installed
+
+- name: Generate containerd configuration
+  shell: '/usr/bin/containerd config default > /etc/containerd/config.toml'
+  changed_when: true
+
+- name: Update cgroup driver in Containerd config.toml
+  lineinfile:
+    path: /etc/containerd/config.toml
+    insertafter: '^(\s+)\[plugins.+\w\.runc\.options\]'
+    line: '            SystemdCgroup = true'
+    state: present
+    backup: yes
+
+- name: Start and enable containerd
+  service:
+    name: containerd
+    state: started
+    enabled: true
+
