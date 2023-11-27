@@ -4,6 +4,7 @@ configs/join_workers.sh
 configs/join_masters.sh
 configs/dns.yml
 configs/ha.yml
+application-list.readme
 do-not-delete/
 cloud_images/
 roles/
