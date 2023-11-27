@@ -167,13 +167,6 @@
     - meta: end_play
       when: ha_cluster == false
 
-    # This will create failover virtual IP that will be used for the apiserver
-    - name: Starting keepalived all secondary master(s)
-      service:
-        name: keepalived
-        state: started
-        enabled: true
-
     - name: Pause for 8 seconds for keepalived to sync with primary
       pause:
         seconds: 8
@@ -210,3 +203,10 @@
         line: KUBECONFIG=$HOME/.kube/config
         create: yes
         mode: '0644'
+
+    # This will create failover virtual IP that will be used for the apiserver
+    - name: Starting keepalived all secondary master(s)
+      service:
+        name: keepalived
+        state: started
+        enabled: true
