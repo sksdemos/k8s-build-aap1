@@ -1,0 +1,57 @@
+    - name: Initializing the controlplane using Docker
+      shell: >
+        kubeadm init
+        --apiserver-advertise-address {{ inventory_hostname }}
+        --pod-network-cidr {{ pod_nw_cidr }}
+        --service-cidr {{ service_nw_cidr }} > /root/controlplane.log
+      async: 600
+      poll: 5
+      when: cri == 'docker'
+
+    - name: Initializing the controlplane using ContainerD
+      shell: >
+        kubeadm init
+        --apiserver-advertise-address {{ inventory_hostname }}
+        --pod-network-cidr {{ pod_nw_cidr }}
+        --service-cidr {{ service_nw_cidr }}
+        --cri-socket /run/containerd/containerd.sock > /root/controlplane.log
+      async: 600
+      poll: 5
+      when: cri == 'containerd'
+
+    - name: Initializing the controlplane using CRI-O
+      shell: >
+        kubeadm init
+        --apiserver-advertise-address {{ inventory_hostname }}
+        --pod-network-cidr {{ pod_nw_cidr }}
+        --service-cidr {{ service_nw_cidr }}
+        --cri-socket unix:///var/run/crio/crio.sock > /root/controlplane.log
+      async: 600
+      poll: 5
+      when: cri == 'cri-o'
+
+    - name: Get the token for joining the worker nodes
+      shell: kubeadm token create  --print-join-command
+      register: join_command_workers
+
+    - name: Adding Docker details to workers join script
+      shell: echo "{{ join_command_workers.stdout_lines[0] }}" >> ~/join_workers.sh
+      changed_when: true
+      when: cri == 'docker'
+
+    - name: Adding ContainerD details to workers join script
+      shell: echo "{{ join_command_workers.stdout_lines[0] }} --cri-socket /run/containerd/containerd.sock" >> ~/join_workers.sh
+      changed_when: true
+      when: cri == 'containerd'
+
+    - name: Adding CRI-O details to workers join script
+      shell: echo "{{ join_command_workers.stdout_lines[0] }} --cri-socket unix:///var/run/crio/crio.sock" >> ~/join_workers.sh
+      changed_when: true
+      when: cri == 'cri-o'
+
+    - name: Copying workers join script to host machine
+      fetch:
+        src: ~/join_workers.sh
+        dest: ./configs/join_workers.sh
+        flat: yes
+

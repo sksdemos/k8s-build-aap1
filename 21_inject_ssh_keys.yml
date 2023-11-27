@@ -24,7 +24,23 @@
         ansible_password: '{{ item.value.vm_root_passwd}}'
       loop: "{{ lookup('dict',cloud_vms_info, wantlist=True) }}"
       loop_control:
-        label: output
+        label: '{{ item.key }}'
+ 
+    - name: Generating hosts file for DNS
+      copy:
+        content: |
+          127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+          ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+        dest: configs/dns.yml
+
+    - name: Adding utility and cluster hosts to  DNS
+      lineinfile:
+        path: configs/dns.yml
+        line: '{{ item.value.vm_static_ip }} {{ item.value.vm_fqdn }} {{ item.value.vm_local_hostname }}'
+      loop: "{{ lookup('dict',cloud_vms_info, wantlist=True) }}"
+      loop_control:
+        label: '{{ item.key }}'
+
 
 
 # This Playbook injects SSH public key into all k8s VMs and readies them for Ansible access
@@ -72,6 +88,14 @@
         user: "{{ ssh_user_name }}"
         key: "{{ lookup('file', 'do-not-delete/ansible_vms_rsa.pub') }}"
         state: present
+
+    - name: Adding /etc/hosts to all VMs
+      copy:
+        src: configs/dns.yml
+        dest: /etc/hosts
+        owner: root
+        group: root
+        mode: 0644
 
     - name: Check for an existing ansible.cfg
       stat:

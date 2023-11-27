@@ -1,0 +1,14 @@
+#---- Octant Dashboard Variables ----#
+octant_url: https://github.com/vmware-archive/octant/releases/download/v0.25.1/octant_0.25.1_Linux-64bit.rpm
+
+# IP of the machine that Octant listens to
+octant_listener_ipaddr: '0.0.0.0'
+
+# Hosts allowed to access Octant Dashboard (Use for security)
+octant_accepted_hosts: '0.0.0.0'
+
+# Port used by octant Web application
+octant_port: 5200
+
+# NOTES: the octant_url: can be made to point to the latest Octant dashboard available or a specific version of Octant
+                                                                                           

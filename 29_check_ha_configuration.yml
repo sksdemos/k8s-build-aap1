@@ -1,0 +1,105 @@
+# This Playbook creates an in-memory inventory identifying all master nodes
+# that will be used in the subsequent play
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+#
+
+- name: Creating in-memory inventory for k8s masters
+  hosts: localhost
+  become: no
+  vars_files:
+    - 'configs/password.yml'
+    - 'configs/cloudinit-config.yml'
+
+  vars:
+    ansible_become_password: "{{ sudo_password }}"
+
+  tasks:
+    - name: Adding controlplane hosts to group
+      add_host:
+        name: '{{ item.value.vm_static_ip }}'
+        groups: masters
+        ansible_user: '{{ ssh_user_name }}'
+      loop: "{{ lookup('dict',cloud_vms_info, wantlist=True) }}"
+      when: item.key | regex_search('(master|worker)') in ['master']
+      loop_control:
+        label: output
+
+
+
+
+# Objective of this playbook is to configure all k8s masters for HA 
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+# HAproxy will be configured to load balance the k8s apiserver
+# keepalived will be used to impliment a Virtual IP address that will be used to frontend the api server
+# If the number of masters in the control plane is one then this playbook ends (so no HA in that case)
+#
+
+
+- name: Configuring Kubernetes for HA (if required)
+  hosts: masters
+  gather_facts: no
+  vars_files:
+    - 'configs/password.yml'
+    - 'configs/k8s-config.yml'
+    - 'configs/cloudinit-config.yml'
+
+  vars:
+    ansible_ssh_private_key_file: ./do-not-delete/ansible_vms_rsa
+
+  tasks:
+    - name: Getting HA status
+      include_vars:
+        file: configs/ha.yml
+
+    - meta: end_play
+      when: not ha_cluster
+
+    - name: Install keepalived and HAproxy package
+      yum:
+        name: 
+          - keepalived
+          - haproxy
+          - psmisc
+        state: installed
+
+    - name: Generate shell script for API server testing
+      template:
+        src: templates/checkAPIserver.sh.j2
+        dest: /etc/keepalived/checkAPIserver.sh
+        mode: 0770
+
+    - name: Configure keepalived for k8s masters
+      template:
+        src: templates/keepalived.conf.j2
+        dest: /etc/keepalived/keepalived.conf
+        backup: yes
+        mode: '0644'
+
+    - name: Configure haproxy for k8s masters
+      template:
+        src: templates/haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
+        backup: yes
+        mode: 0644
+
+    - name: Starting the haproxy service
+      service:
+        name: haproxy
+        state: started
+        enabled: true
+
+#    - name: Starting the keepalived service
+#      service:
+#        name: keepalived
+#        state: started
+#        enabled: true
+
+# NOTE: keepalived was installed and configured but was not started or enabled as it uses a health check script that looks out for the kube apiserver
+#       and since none of the masters have been configured. It will be started as and when the masters are setup by playbooks later. Starting this
+#       will cause keepalived to detect downtime and start rotate the Virtual IP across all the masters causing failure of secondary masters and
+#       workers to join
+#

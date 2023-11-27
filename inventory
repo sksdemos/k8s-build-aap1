@@ -1,1 +1,12 @@
+# This inventory has no significance for the playbooks but its presense will prevent some warnings
+# The playbooks construct in-memory inventories to target managed hosts. So dont sweat it :)
+# DO NOT EDIT
+
 dummy_host
+[cluster]
+
+[masters]
+
+[ansible_vms]
+
+[workers]

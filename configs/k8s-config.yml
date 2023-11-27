@@ -1,49 +1,74 @@
-#---- k8s Installation Parameters ----#
+#-------------------------------#
+#     k8s install variables     #
+#-------------------------------#
 
-# Exact version of Kubernates packages
-k8s_packages: 
-  - 'kubelet-1.21.2' 
-  - 'kubeadm-1.21.2'
-  - 'kubectl-1.21.2'
+# Kubernetes version to install
+k8s_package_version: 1.28.1
 
-k8s_kubectl: kubectl-1.21.2
+# k8s repository version
+k8s_repo_version: 1.28
+# NOTES: This will be used to point to the yum repository version for Kubernetes. Must match with the package version
 
-# NOTES:
-# Set with the exact version of k8s that needs to be installed
+pod_nw_cidr: '10.30.0.0/16'
+service_nw_cidr: '172.16.0.0/16'
+
+# NOTES: The pod network and service network cidr will be used by the kubeadm init command to bootstrap the control plane
+
+# Dictionary to install additional k8s components
+components:
+  install_kubectl_on_host: true
+  install_octant_dashboard: true
 
 
-# This pod network cidr will be used by the kubeadm init command to bbootstrap the control plane
-pod_nw_cidr: '192.168.0.0/16'
-service_nw_cidr: '172.30.0.0/16'
 
 
-#---- Container Runtime Parameters ----#
+#-------------------------------#
+#     K8s Container Runtime     #
+#-------------------------------#
 
 # Variable specifying container runtime interface to be used. 
 cri: 'cri-o'
 
 # NOTES:
 # Can hold three values 'docker' 'containerd' or 'cri-o'
-# You definately dont want to set the value as 'docker'. Docker SHIM is depricated and docker CE has too many packages
+# You might not want to set the value as 'docker' as Docker CE repository has way too many packages
+#
+# Best to settle with 'containerd' or 'cri-o'
 
 
 
-# Set these for containerd container runtime interface
-containerd_url: https://download.docker.com/linux/centos/8/x86_64/stable/Packages/containerd.io-1.4.9-3.1.el8.x86_64.rpm
+# Set this variable for containerd container runtime
+containerd_url: https://download.docker.com/linux/centos/8/x86_64/stable/Packages/containerd.io-1.6.9-3.1.el8.x86_64.rpm
 
 # NOTES:
 # Will be used only when cri: 'containerd'. Else it is ignored
 
 
-# Set these for CRI-O container runtime interface. 
+# Set these variables for CRI-O container runtime
 os: CentOS_8
-version: '1.21:1.21.2'
+version: '1.28:1.28.1'
 
 # NOTES:
 # Will be used only when cri: 'cri-o'. Else it is ignored
 # CRI-O major version needs to be the same version as Kubernetes major version. Refer to the documentation
 # https://kubernetes.io/docs/setup/production-environment/container-runtimes/#cri-o
 # WARNING: Failure to adhere to this will result in Cluster install failure
+
+
+
+
+#---- Virtual IP ----#
+ha_virtual_ip: 192.168.200.5
+
+# NOTE: This will be the k8s apiserver endpoint configured on the load balancer. Ensure that this IP address matches up with the IP range of the cluster VMS
+
+
+
+#---- haproxy related settings ----#
+haproxy_url_port: 5100
+haproxy_apiserver_port: 8443
+
+# WIll only be used when HA configuration kicks in
 
 
 
@@ -63,18 +88,15 @@ cni_url: https://docs.projectcalico.org/manifests/calico.yaml
 #
 # Calico URL: https://docs.projectcalico.org/manifests/calico.yaml
 # Flannel URL: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+#
+# Different networking addons may have a different process of setting up that may require modification to the k8s_master_configuration playbook
+# THIS CODEBASE USES CALICO
 
 
 
 
-#---- Octant k8s Dashboard URL ----#
-octant_url: https://github.com/vmware-tanzu/octant/releases/download/v0.24.0/octant_0.24.0_Linux-64bit.rpm
+# --- DO NOT EDIT BELOW THIS LINE ---#
+ha_cluster: false
 
-# IP of the machine that Octant listens to
-octant_listener_ipaddr: '0.0.0.0'
+# NOTES: Defaults to a false. Playbook will automatically set this to a true when the number of masters >= 3 and in odd numbers
 
-# Hosts allowed to access Octant Dashboard (Use for security)
-octant_accepted_hosts: '0.0.0.0'
-
-# Port used by octant Web application
-octant_port: 5200

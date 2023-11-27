@@ -1,0 +1,12 @@
+- import_playbook: 01_download_roles.yml
+- import_playbook: 05_generate_ssh_keys.yml
+- import_playbook: 09_generate_vm_manifests.yml
+- import_playbook: 13_libvirt_configuration.yml
+- import_playbook: 17_create_cluster_vms.yml
+- import_playbook: 21_inject_ssh_keys.yml
+- import_playbook: 25_k8s_configuration.yml
+- import_playbook: 29_check_ha_configuration.yml
+- import_playbook: 33_init_k8s_masters.yml
+- import_playbook: 37_k8s_worker_configuration.yml
+- import_playbook: 80_opt_install_kubectl.yml
+- import_playbook: 81_opt_install_dashboard.yml

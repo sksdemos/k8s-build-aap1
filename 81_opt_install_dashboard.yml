@@ -1,0 +1,109 @@
+# This Playbook creates an in-memory inventory used in the subsequent play
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+#
+
+- name: Checking if Octant dashboard needs to be installed
+  hosts: localhost
+  gather_facts: no
+  become: no
+  vars_files:
+    - 'configs/password.yml'
+    - 'configs/cloudinit-config.yml'
+
+  vars:
+    ansible_become_password: "{{ sudo_password }}"
+
+  tasks:
+    - name: Adding helper hosts to group 
+      add_host:
+        name: '{{ item.value.vm_static_ip }}'
+        groups: helper
+        ansible_user: '{{ ssh_user_name }}'
+      loop: "{{ lookup('dict',cloud_vms_info, wantlist=True) }}"
+      when: item.key | regex_search('(utility)') in ['utility']
+      loop_control:
+        label: output
+
+
+
+# Objective is to install Vmware Octant Dashboard
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+#
+
+
+- name: Attempting to install VMware Octant 
+  hosts: helper
+  gather_facts: no
+  vars_files:
+    - 'configs/k8s-config.yml'
+    - 'configs/k8s-addons.yml'
+
+  tasks:
+    - meta: end_play
+      when: components.install_octant_dashboard == false
+
+    - name: Copying kubeconfig resource to helper
+      copy:
+        src: ~/.kube/config
+        dest: /root/.kube/
+        mode: '0644'
+
+    - name: Downloading Octant from URL
+      yum:
+        name: "{{ octant_url }}"
+        state: installed
+        disable_gpg_check: yes
+
+    - name: Creating Plugin folders
+      file:
+        path: .config/octant/plugins
+        state: directory
+        recurse: yes
+
+    - name: Creating Octant Service Script
+      copy:
+        content: |
+          [Unit]
+          Description=Vmware Octant k8s dashboard
+
+          [Service]
+          Environment="HOME=/root"
+          Environment="OCTANT_ACCEPTED_HOSTS={{ octant_accepted_hosts }}"
+          Environment="KUBECONFIG=/root/.kube/config"
+          Environment="OCTANT_LISTENER_ADDR={{ octant_listener_ipaddr }}:{{ octant_port }}"
+          Environment="OCTANT_DISABLE_OPEN_BROWSER=true"
+          Environment="PATH=/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin"
+          WorkingDirectory=/usr/local/bin/
+          ExecStart=/usr/local/bin/octant
+          Type=simple
+          Restart=on-failure
+
+          [Install]
+          WantedBy=multi-user.target
+
+        dest: /usr/lib/systemd/system/octant.service
+        mode: 0444
+        owner: "root"
+        group: "root"
+
+# NOTES:
+# Systemd service unit was created basis the following command line shell script
+# This was screwed up though as it required to be backgrounded else playbook would not terninate and get stuck
+#   #!/bin/bash
+#   /usr/local/bin/octant --accepted-hosts "0.0.0.0" --disable-open-browser --listener-addr "{{ cloud_vms_info['k8s-helper'].vm_static_ip | ipaddr('address') }}:{{ dashboard_port }}"
+
+
+    - name: Generating systemd dependency tree
+      systemd:
+        daemon_reload: yes  
+
+    - name: Starting Octant Service
+      service:
+        name: octant
+        state: started
+        enabled: true
+
