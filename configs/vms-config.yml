@@ -35,7 +35,7 @@ vmg_vms_infra:
      alphabet: False
      snapshot: False
   'k8s-master':
-     count: 3
+     count: 1
      cpus: 2
      memory: 2048
      root_disk_size: 20G
