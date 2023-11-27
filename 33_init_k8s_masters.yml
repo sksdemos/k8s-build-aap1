@@ -167,10 +167,6 @@
     - meta: end_play
       when: ha_cluster == false
 
-    - name: Pause for 8 seconds for keepalived to sync with primary
-      pause:
-        seconds: 8
-
     - name: Copy join script to secondary master(s)
       copy:
         src: configs/join_masters.sh
@@ -210,3 +206,7 @@
         name: keepalived
         state: started
         enabled: true
+
+    - name: Pause for 8 seconds for keepalived to sync with primary
+      pause:
+        seconds: 8
