@@ -1,19 +1,22 @@
-#-----------------------------------------------------------#
-# libvirt_setup and cloud_init VM snd DNS pecific variables #
-#-----------------------------------------------------------#
+#------------------------------------------------------------#
+# libvirt_setup and cloud_init VM and DNS specific variables #
+#------------------------------------------------------------#
 
 # DO NOT EDIT WITHOUT CONSULTING DOCUMENTATION FOR VMG ROLE #
+
+# Centos 8 Cloud image: https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-latest.x86_64.qcow2 
+# Centos 9 Cloud image: https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2 
 
 vmg_nw_name: k8s-net
 vmg_nw_bridge: br0-k8s
 vmg_nw_gateway: 192.168.200.1
 vmg_nw_mask: 255.255.255.0
-vmg_nw_dhcp_start: 192.168.200.51
+vmg_nw_dhcp_start: 192.168.200.151
 vmg_nw_dhcp_end: 192.168.200.254
 
 vmg_vm_domain: homelab.k8s
-vmg_vm_image_link: https://cloud.centos.org/centos/8-stream/x86_64/images/CentOS-Stream-GenericCloud-8-latest.x86_64.qcow2 
-vmg_vm_first_ip_octet: 10
+vmg_vm_image_link: https://cloud.centos.org/centos/9-stream/x86_64/images/CentOS-Stream-GenericCloud-9-latest.x86_64.qcow2 
+vmg_vm_first_ip_octet: 3
 vmg_vm_network: 192.168.200.0
 vmg_vm_netmask: 255.255.255.0
 vmg_vm_root_passwd: letmein
