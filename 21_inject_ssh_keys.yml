@@ -124,6 +124,7 @@
           forks = 20
           remote_user = {{ ssh_user_name }}
           private_key_file = ./do-not-delete/ansible_vms_rsa
+          deprecation_warnings=False
 
           [privilege_escalation]
           become = yes
