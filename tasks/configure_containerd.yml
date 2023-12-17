@@ -11,10 +11,9 @@
 - name: Update cgroup driver in Containerd config.toml
   lineinfile:
     path: /etc/containerd/config.toml
-    insertafter: '^(\s+)\[plugins.+\w\.runc\.options\]'
+    regexp: '            SystemdCgroup = false'
     line: '            SystemdCgroup = true'
     state: present
-    backup: yes
 
 - name: Start and enable containerd
   service:
