@@ -44,6 +44,7 @@
          content: |
            [defaults]
            host_key_checking = false
+           deprecation_warnings = false
            inventory = inventory
            forks = 20
            private_key_file = /home/{{ loggedin_user }}/ansible-basic/do-not-delete/ansible_vms_rsa
