@@ -1,23 +1,37 @@
-#-------------------------------#
-#     k8s install variables     #
-#-------------------------------#
+#----------------------------------------#
+#     k8s version specific variables     #
+#----------------------------------------#
 
 # Kubernetes version to install
-k8s_package_version: 1.28.1
+k8s_package_version: 1.29.0
+
 
 # k8s repository version
-k8s_repo_version: 1.28
-# NOTES: This will be used to point to the yum repository version for Kubernetes. Must match with the package version
+k8s_repo_version: 1.29
+
+# NOTES: This will be used to point to the yum repository version for Kubernetes. Must match with the package version and should only indicate major and minor version
+
 
 pod_nw_cidr: '10.30.0.0/16'
 service_nw_cidr: '172.16.0.0/16'
 
 # NOTES: The pod network and service network cidr will be used by the kubeadm init command to bootstrap the control plane
 
-# Dictionary to install additional k8s components
-components:
-  install_kubectl_on_host: true
-  install_octant_dashboard: true
+
+
+#---- virtual ip used by keepalived  ----#
+ha_virtual_ip: 192.168.200.2
+
+# NOTE: This will be the k8s apiserver endpoint configured on the load balancer. Ensure that this IP address matches with the network of the cluster VMS
+
+
+
+#---- haproxy related settings ----#
+haproxy_url_port: 5100
+haproxy_apiserver_port: 8443
+
+# NOTE; the above three variables WIll only be used when HA configuration kicks in
+
 
 
 
@@ -27,7 +41,7 @@ components:
 #-------------------------------#
 
 # Variable specifying container runtime interface to be used. 
-cri: 'cri-o'
+cri: 'containerd'
 
 # NOTES:
 # Can hold three values 'docker' 'containerd' or 'cri-o'
@@ -45,8 +59,8 @@ containerd_url: https://download.docker.com/linux/centos/8/x86_64/stable/Package
 
 
 # Set these variables for CRI-O container runtime
-os: CentOS_8
-version: '1.28:1.28.1'
+os: CentOS_9_Stream		# This should match to the cloud image you are using
+version: '1.29'                 # This value must match with the Kubernetes version that you are installing
 
 # NOTES:
 # Will be used only when cri: 'cri-o'. Else it is ignored
@@ -57,23 +71,9 @@ version: '1.28:1.28.1'
 
 
 
-#---- Virtual IP ----#
-ha_virtual_ip: 192.168.200.5
-
-# NOTE: This will be the k8s apiserver endpoint configured on the load balancer. Ensure that this IP address matches up with the IP range of the cluster VMS
-
-
-
-#---- haproxy related settings ----#
-haproxy_url_port: 5100
-haproxy_apiserver_port: 8443
-
-# WIll only be used when HA configuration kicks in
-
-
-
-
-#---- k8s Container Network Addon ----#
+#------------------------------------#
+#    k8s Container Network Addon     #
+#------------------------------------#
 
 # Variable to specify container networking addons
 cni_url: https://docs.projectcalico.org/manifests/calico.yaml
@@ -91,6 +91,20 @@ cni_url: https://docs.projectcalico.org/manifests/calico.yaml
 #
 # Different networking addons may have a different process of setting up that may require modification to the k8s_master_configuration playbook
 # THIS CODEBASE USES CALICO
+
+
+
+
+#--------------------------------------#
+#     Optional component variables     #
+#--------------------------------------#
+
+# Dictionary to install additional k8s components
+components:
+  install_kubectl_on_host: true
+  install_octant_dashboard: true
+
+
 
 
 
