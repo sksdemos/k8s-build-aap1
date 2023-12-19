@@ -200,3 +200,20 @@
     # NOTE: at this point the kubelet service is now in a crashloop and restarting every few seconds, 
     #       as it waits for kubeadm to tell it what to do
 
+    - name: Check for an existing cluster-info.readme
+      stat:
+        path: cluster-info.readme
+      register: result
+      delegate_to: localhost
+      run_once: yes
+      become: no
+
+    - name: Delete cluster-info.readme if it exist
+      file:
+        path: cluster-info.readme
+        state: absent
+      when: result.stat.exists
+      delegate_to: localhost
+      run_once: yes
+      become: no
+
