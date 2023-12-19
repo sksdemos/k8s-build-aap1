@@ -4,7 +4,7 @@ configs/join_workers.sh
 configs/join_masters.sh
 configs/dns.yml
 configs/ha.yml
-application-list.readme
+cluster-info.readme
 ansible.cfg
 do-not-delete/
 cloud_images/
