@@ -40,6 +40,10 @@
   vars_files:
     - 'configs/password.yml'
     - 'configs/k8s-config.yml'
+
+  vars:
+    ansible_ssh_private_key_file: ./do-not-delete/ansible_vms_rsa
+
   tasks:
     - meta: end_play
       when: components.install_kubectl_on_host == false
@@ -92,3 +96,10 @@
       vars:
         ansible_become_password: "{{ sudo_password }}"
 
+    - name: Updating application-list.readme 
+      lineinfile:
+        line: '[x] kubectl was setup on host'
+        path: cluster-info.readme
+        create: yes
+      become: no
+      delegate_to: localhost
