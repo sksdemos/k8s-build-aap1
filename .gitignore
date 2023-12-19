@@ -6,6 +6,7 @@ configs/dns.yml
 configs/ha.yml
 cluster-info.readme
 ansible.cfg
+inventory
 do-not-delete/
 cloud_images/
 roles/
