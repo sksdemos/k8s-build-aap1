@@ -10,3 +10,5 @@ dummy_host
 [ansible_vms]
 
 [workers]
+
+[helper]
