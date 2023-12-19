@@ -55,7 +55,7 @@
       include_vars:
         file: configs/ha.yml
 
-   - name: Updating application-list.readme
+    - name: Updating application-list.readme
       lineinfile:
         line: 'K8s Cluster installation: (Non HA)'
         path: cluster-info.readme
@@ -107,7 +107,7 @@
 #       workers to join
 #
 
-   - name: Updating application-list.readme
+    - name: Updating application-list.readme
       lineinfile:
         line: 'K8s Cluster installation: (HA mode)'
         path: cluster-info.readme
