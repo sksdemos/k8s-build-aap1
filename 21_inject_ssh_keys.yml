@@ -75,7 +75,6 @@
         password: "{{ ssh_user_pwd | password_hash('sha512') }}"
         update_password: on_create
         state: present
-      #no_log: true
 
     - name: Enable sudo access for the remote user
       copy:
@@ -118,13 +117,12 @@
       copy:
         content: |
           [defaults]
-          inventory = inventory
-          host_key_checking = false
-          ask_pass = no
-          forks = 20
+          host_key_checking = False
+          deprecation_warnings = False
           remote_user = {{ ssh_user_name }}
-          private_key_file = ./do-not-delete/ansible_vms_rsa
-          deprecation_warnings=False
+          inventory = inventory
+          forks = 25
+          private_key_file = /home/{{ loggedin_user }}/ansible-basic/do-not-delete/ansible_vms_rsa
 
           [privilege_escalation]
           become = yes

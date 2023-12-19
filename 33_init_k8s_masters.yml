@@ -44,6 +44,7 @@
 - name: Starting Kubernetes master configuration
   hosts: '{{ groups.masters[0] }}'
   gather_facts: no
+  become: yes
   vars:
     calico_env: '            - name: CALICO_IPV4POOL_CIDR'
     calico_ip: '              value: "{{ pod_nw_cidr }}"'
