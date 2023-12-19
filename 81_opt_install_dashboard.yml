@@ -42,6 +42,9 @@
     - 'configs/k8s-config.yml'
     - 'configs/k8s-addons.yml'
 
+  vars:
+    ansible_ssh_private_key_file: ./do-not-delete/ansible_vms_rsa
+
   tasks:
     - meta: end_play
       when: components.install_octant_dashboard == false
@@ -106,4 +109,20 @@
         name: octant
         state: started
         enabled: true
+
+    - name: Updating application-list.readme
+      lineinfile:
+        line: '[x] Installed Octant dashboard'
+        path: cluster-info.readme
+        create: yes
+      delegate_to: localhost
+      become: no
+
+    - name: Adding Octant URL
+      lineinfile:
+        line: '    Access at https://{{ groups.helper[0] }}:{{ octant_port }}'
+        path: cluster-info.readme
+        create: yes
+      delegate_to: localhost
+      become: no
 
