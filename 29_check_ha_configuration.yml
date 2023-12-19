@@ -55,6 +55,15 @@
       include_vars:
         file: configs/ha.yml
 
+   - name: Updating application-list.readme
+      lineinfile:
+        line: 'K8s Cluster installation: (Non HA)'
+        path: cluster-info.readme
+        create: yes
+      when: not ha_cluster
+      delegate_to: localhost
+      become: no
+
     - meta: end_play
       when: not ha_cluster
 
@@ -92,14 +101,17 @@
         state: started
         enabled: true
 
-#    - name: Starting the keepalived service
-#      service:
-#        name: keepalived
-#        state: started
-#        enabled: true
-
 # NOTE: keepalived was installed and configured but was not started or enabled as it uses a health check script that looks out for the kube apiserver
 #       and since none of the masters have been configured. It will be started as and when the masters are setup by playbooks later. Starting this
 #       will cause keepalived to detect downtime and start rotate the Virtual IP across all the masters causing failure of secondary masters and
 #       workers to join
 #
+
+   - name: Updating application-list.readme
+      lineinfile:
+        line: 'K8s Cluster installation: (HA mode)'
+        path: cluster-info.readme
+        create: yes
+      delegate_to: localhost
+      become: no
+
