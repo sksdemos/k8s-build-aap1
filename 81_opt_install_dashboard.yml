@@ -55,6 +55,13 @@
         dest: /root/.kube/
         mode: '0644'
 
+    - name: Setting Environment variable for k8s access
+      lineinfile:
+        path: ~/.bashrc
+        line: KUBECONFIG=$HOME/.kube/config
+        create: yes
+        mode: '0644'
+
     - name: Downloading Octant from URL
       yum:
         name: "{{ octant_url }}"
