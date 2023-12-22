@@ -11,4 +11,14 @@ octant_accepted_hosts: '0.0.0.0'
 octant_port: 5200
 
 # NOTES: the octant_url: can be made to point to the latest Octant dashboard available or a specific version of Octant
-                                                                                           
+
+
+
+#---- NFS storage Provisioner ----#
+
+nfs_share: '/nfs/storage'
+nfs_options: '*(rw,sync,no_subtree_check)'
+nfs_permission: '0770'
+nfs_prov_repo: 'https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/'
+nfs_namespace: nfs-storage-ns
+nfs_storageclass_name: nfs-storage
