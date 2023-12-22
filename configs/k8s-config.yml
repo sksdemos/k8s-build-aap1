@@ -103,7 +103,7 @@ cni_url: https://docs.projectcalico.org/manifests/calico.yaml
 components:
   install_kubectl_on_host: true
   install_octant_dashboard: true
-
+  install_nfs_storage_provisioner: true
 
 
 
