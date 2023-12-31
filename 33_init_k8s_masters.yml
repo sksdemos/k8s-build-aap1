@@ -29,7 +29,8 @@
 
 
 
-# Objective is to configure k8s master(s) to a Ready state 
+
+# Objective is to initialize k8s master(s) to bootstrap the control plane
 #
 # ASSUMPTIONS:
 # Will make use of sudo password in the configs/password.yml in clear text
@@ -56,8 +57,10 @@
   tasks:
 
     - name: Ensure Pip is installed.
-      package:
-        name: python3-pip
+      yum:
+        name: 
+          - python3-pip
+          - git
         state: present
 
     - name: Ensure OpenShift client is installed.
@@ -121,37 +124,6 @@
         create: yes
         mode: '0644'
 
-    - name: Download the network CNI plugin on master
-      get_url:
-        url: "{{ cni_url }}" 
-        dest: /tmp
-        force: yes
-
-    - name: Update the CNI plugin with k8s pod CIDR
-      blockinfile:
-        path: /tmp/calico.yaml
-        insertafter: '            #   value: "192.168.0.0/16"'
-        marker: ' '
-        content: |
-          {{ calico_env }}
-          {{ calico_ip }}
-
-    - name: Installing CNI plugin
-      k8s:
-        state: present
-        src: /tmp/calico.yaml
-
-    - name: Waiting for master(s) status to be Ready
-      shell: |
-        set -o pipefail
-        kubectl get nodes | tail -n1 | cut -d " " -f 4
-      args:
-        executable: /bin/bash
-      register: status
-      until: status.stdout == 'Ready'
-      retries: 36
-      delay: 5
-      changed_when: false
 
 
 - name: Adding Secondary master(s) Kubernetes controlplane
@@ -159,6 +131,8 @@
   gather_facts: no
   vars_files:
     - 'configs/k8s-config.yml'
+  vars:
+    ansible_ssh_private_key_file: ./do-not-delete/ansible_vms_rsa
   tasks:
 
     - name: Getting HA status
@@ -177,6 +151,7 @@
     - name: Joining secondary master(s) to controlplane
       shell: '~/join_masters.sh > /root/masters-{{ inventory_hostname }}.log'
       changed_when: true
+      ignore_errors: yes
 
     - name: Creating .kube directory on secondary master(s)
       file:
@@ -194,7 +169,7 @@
         owner: root
         group: root
 
-    - name: Setting KUBECONFIG Environment variable
+    - name: Setting KUBECONFIG Environment variable on secondary masters(s)
       lineinfile:
         path: ~/.bashrc
         line: KUBECONFIG=$HOME/.kube/config
