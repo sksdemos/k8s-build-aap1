@@ -8,5 +8,12 @@
 - import_playbook: 29_check_ha_configuration.yml
 - import_playbook: 33_init_k8s_masters.yml
 - import_playbook: 37_k8s_worker_configuration.yml
+- import_playbook: 41_apply_cni_plugin_to_k8s.yml
+- import_playbook: 79_opt_install_kubectl_on_helper.yml
 - import_playbook: 80_opt_install_kubectl.yml
 - import_playbook: 81_opt_install_dashboard.yml
+- import_playbook: 82_opt_nfs_storage_provisioner.yml
+- import_playbook: 83_opt_metrics_server.yml
+- import_playbook: 84_opt_kube_state_metrics.yml
+- import_playbook: 85_opt_metallb_load_balancer.yml
+
