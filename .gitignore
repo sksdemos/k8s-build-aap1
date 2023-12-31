@@ -4,6 +4,7 @@ configs/join_workers.sh
 configs/join_masters.sh
 configs/dns.yml
 configs/ha.yml
+tasks/kubeadm_init_cmd.yml
 cluster-info.readme
 ansible.cfg
 inventory
