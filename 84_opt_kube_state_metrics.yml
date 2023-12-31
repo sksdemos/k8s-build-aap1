@@ -1,0 +1,69 @@
+# This Playbook creates an in-memory inventory used in the subsequent play
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+#
+
+- name: Collecting in-moemory inventory for Helper
+  hosts: localhost
+  gather_facts: no
+  become: no
+  vars_files:
+    - 'configs/password.yml'
+    - 'configs/cloudinit-config.yml'
+
+  vars:
+    ansible_become_password: "{{ sudo_password }}"
+
+  tasks:
+    - name: Adding helper hosts to group
+      add_host:
+        name: '{{ item.value.vm_static_ip }}'
+        groups: helper
+        ansible_user: '{{ ssh_user_name }}'
+      loop: "{{ lookup('dict',cloud_vms_info, wantlist=True) }}"
+      when: item.key | regex_search('(utility)') in ['utility']
+      loop_control:
+        label: output
+
+
+
+
+# Objective is to install Kubernetes State Metrics 
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+#
+
+
+- name: Attempting to install Metric Server
+  hosts: helper
+  gather_facts: no
+  vars_files:
+    - 'configs/k8s-config.yml'
+    - 'configs/k8s-addons.yml'
+
+  vars:
+    ansible_ssh_private_key_file: ./do-not-delete/ansible_vms_rsa
+
+  tasks:
+    - meta: end_play
+      when: components.install_kube_state_metrics == false
+
+    - name: Cloning Kubernetes State repositories
+      git:
+        repo: '{{ ksm_repo }}'
+        dest: /tmp/kube-state-metrics/
+        force: yes
+
+    - name: Applying Kube State Metrics manifest
+      command: kubectl apply -f /tmp/kube-state-metrics/examples/standard/
+
+    - name: Updating application-list.readme
+      lineinfile:
+        line: '[x] Kubernetes State Metrics configured'
+        path: cluster-info.readme
+        create: yes
+      delegate_to: localhost
+      become: no
+
