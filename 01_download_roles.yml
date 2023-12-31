@@ -1,4 +1,16 @@
-- name: Downloads roles for infra
+--
+# This Playbook downloads roles to create VM infrastructure
+#
+# ASSUMPTIONS:
+# You are running this playbook as a user you are currently logged on
+# Your user account has sudo access and you have the sudo password
+# You are willing to store the sudo password in the configs/password.yml with or without vault encryption.
+#
+# NOTE: without the sudo password tasks up ahead may fail
+#
+
+
+- name: Downloads roles for VM infrastructure
   hosts: localhost
   gather_facts: no
   become: no
@@ -17,3 +29,4 @@
         -  [https://github.com/sksdemos/cloud_init, roles/cloud_init]
         -  [https://github.com/sksdemos/vmg, roles/vmg]
         -  [https://github.com/sksdemos/bind, roles/bind]
+        -  [https://github.com/sksdemos/helm, roles/helm]
