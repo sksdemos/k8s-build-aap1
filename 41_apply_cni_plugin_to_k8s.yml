@@ -1,0 +1,111 @@
+# This Playbook creates an in-memory inventory to build a list all master nodes
+# This list will be used in the subsequent play
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+#
+
+- name: Creating in-memory inventory
+  hosts: localhost
+  gather_facts: no
+  become: no
+  vars_files:
+    - 'configs/password.yml'
+    - 'configs/cloudinit-config.yml'
+
+  vars:
+    ansible_become_password: "{{ sudo_password }}"
+
+  tasks:
+
+    - name: Adding master hosts to group 
+      add_host:
+        name: '{{ item.value.vm_static_ip }}'
+        groups: masters
+        ansible_user: '{{ ssh_user_name }}'
+      loop: "{{ lookup('dict',cloud_vms_info, wantlist=True) }}"
+      when: item.key | regex_search('(master|worker)') in ['master']
+      loop_control:
+        label: output
+
+
+# Objective is to apply the selected CNI plugin to the control plane
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+#
+
+
+- name: Adding CNI addon to primary master
+  hosts: '{{ groups.masters[0] }}'
+  gather_facts: no
+  become: yes
+  vars:
+    calico_env: '            - name: CALICO_IPV4POOL_CIDR'
+    calico_ip: '              value: "{{ pod_nw_cidr }}"'
+    ansible_ssh_private_key_file: ./do-not-delete/ansible_vms_rsa
+
+  vars_files:
+    - 'configs/password.yml'
+    - 'configs/k8s-config.yml'
+  tasks:
+
+
+    - block:
+      - name: Download the network CNI plugin on master
+        get_url:
+          url: "{{ cni_url }}"
+          dest: /tmp
+          force: yes
+
+      - name: Update the CNI plugin with k8s pod CIDR
+        blockinfile:
+          path: /tmp/calico.yaml
+          insertafter: '            #   value: "192.168.0.0/16"'
+          marker: ' '
+          content: |
+            {{ calico_env }}
+            {{ calico_ip }}
+
+      - name: Installing CNI plugin Calico
+        k8s:
+          state: present
+          src: /tmp/calico.yaml
+
+      when: cni_addon == 'calico'
+
+
+
+
+    - block:
+      - name: Installing Helm
+        include_role:
+          name: helm
+
+      - name: Download Cilium tarball
+        get_url:
+          url: https://github.com/cilium/cilium-cli/releases/latest/download/cilium-linux-amd64.tar.gz
+          dest: ~/
+          force: yes
+
+      - name: Expand Cilium tarball
+        unarchive:
+          remote_src: yes
+          src: ~/cilium-linux-amd64.tar.gz
+          dest: /usr/local/bin/
+
+      - name: Executing Cilium install
+        command: /usr/local/bin/cilium install
+
+      when: cni_addon == 'cilium'
+
+    - name: Waiting for all cluster node(s) to be Ready (Be Patient)
+      shell: |
+        set -o pipefail
+        kubectl get nodes | tail -n +2 | awk '{print $2}'
+      args:
+        executable: /bin/bash
+      register: status
+      until: status.stdout_lines | unique | length == 1 and status.stdout_lines[0] == 'Ready'
+      retries: 36
+      delay: 10    
