@@ -14,7 +14,7 @@ octant_port: 5200
 
 
 
-#---- NFS storage Provisioner ----#
+#---- NFS storage Provisioner Variables ----#
 
 nfs_share: '/nfs/storage'
 nfs_options: '*(rw,sync,no_subtree_check)'
@@ -22,3 +22,19 @@ nfs_permission: '0770'
 nfs_prov_repo: 'https://github.com/kubernetes-sigs/nfs-subdir-external-provisioner/'
 nfs_namespace: nfs-storage-ns
 nfs_storageclass_name: nfs-storage
+
+
+#---- MetalLB Load Balancer Variables ----#
+metallb_url: https://raw.githubusercontent.com/metallb/metallb/v0.13.12/config/manifests/metallb-native.yaml
+metallb_ipaddr_pool: 192.168.200.130-192.168.200.150
+
+
+#---- Metric Server Related Variable ----#
+metrics_server_url: https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+
+#Use this for Metrics Server in HA mode
+#metrics_server_url: 'https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/high-availability-1.21+.yaml'
+
+
+#---- Kube State Metrics Variables ----#
+ksm_repo: https://github.com/kubernetes/kube-state-metrics.git
