@@ -1,0 +1,77 @@
+# This Playbook creates an in-memory inventory used in the subsequent play
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+#
+
+- name: Checking if NFS storage provisioner needs to be installed
+  hosts: localhost
+  gather_facts: no
+  become: no
+  vars_files:
+    - 'configs/password.yml'
+    - 'configs/cloudinit-config.yml'
+
+  vars:
+    ansible_become_password: "{{ sudo_password }}"
+
+  tasks:
+    - name: Adding helper hosts to group
+      add_host:
+        name: '{{ item.value.vm_static_ip }}'
+        groups: helper
+        ansible_user: '{{ ssh_user_name }}'
+      loop: "{{ lookup('dict',cloud_vms_info, wantlist=True) }}"
+      when: item.key | regex_search('(utility)') in ['utility']
+      loop_control:
+        label: output
+
+
+
+
+# Objective is to install NFS Storage Provisioner
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+#
+
+
+- name: Attempting to install Metric Server
+  hosts: helper
+  gather_facts: no
+  vars_files:
+    - 'configs/k8s-config.yml'
+    - 'configs/k8s-addons.yml'
+
+  vars:
+    ansible_ssh_private_key_file: ./do-not-delete/ansible_vms_rsa
+
+  tasks:
+    - meta: end_play
+      when: components.install_metrics_server == false
+
+    - name: Download Metric Server manifest
+      get_url:
+        url: "{{ metrics_server_url }}"
+        dest: /tmp
+        force: yes
+
+    - name: Update the Metrics server manifest
+      lineinfile:
+        path: /tmp/components.yaml
+        insertafter: '- args:'
+        line: '        - --kubelet-insecure-tls'
+
+    - name: Applying Metrics Server manifest
+      k8s:
+        state: present
+        src: /tmp/components.yaml
+
+    - name: Updating application-list.readme
+      lineinfile:
+        line: '[x] Metrics Server configured'
+        path: cluster-info.readme
+        create: yes
+      delegate_to: localhost
+      become: no
+
