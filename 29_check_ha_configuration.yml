@@ -117,7 +117,7 @@
 
     - name: Adding haproxy details cluster-info.readme
       lineinfile:
-        line: 'Access haproxy on http://{{ ha_virtual_ip }}:{{ haproxy_url_port }} with Auth: {{ haproxy_username }}/{{ haproxy_password }}'
+        line: '--> Access haproxy on http://{{ ha_virtual_ip }}:{{ haproxy_url_port }} with Auth: {{ haproxy_username }}/{{ haproxy_password }}'
         path: cluster-info.readme
         create: yes
       delegate_to: localhost
