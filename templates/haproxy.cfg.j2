@@ -40,4 +40,4 @@ listen stats
     stats uri /
     stats refresh 10s
     stats realm HAProxy\ Statistics
-    stats auth admin:haproxy
+    stats auth {{ haproxy_username }}:{{ haproxy_password }}
