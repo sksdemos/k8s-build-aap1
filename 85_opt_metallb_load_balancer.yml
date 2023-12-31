@@ -1,0 +1,121 @@
+# This Playbook creates an in-memory inventory used in the subsequent play
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+#
+
+- name: Checking if NFS storage provisioner needs to be installed
+  hosts: localhost
+  gather_facts: no
+  become: no
+  vars_files:
+    - 'configs/password.yml'
+    - 'configs/cloudinit-config.yml'
+
+  vars:
+    ansible_become_password: "{{ sudo_password }}"
+
+  tasks:
+    - name: Adding helper hosts to group
+      add_host:
+        name: '{{ item.value.vm_static_ip }}'
+        groups: helper
+        ansible_user: '{{ ssh_user_name }}'
+      loop: "{{ lookup('dict',cloud_vms_info, wantlist=True) }}"
+      when: item.key | regex_search('(utility)') in ['utility']
+      loop_control:
+        label: output
+
+
+
+
+# Objective is to install NFS Storage Provisioner
+#
+# ASSUMPTIONS:
+# Will make use of sudo password in the configs/password.yml in clear text
+# Assumes that the kubeconfig is already available on the Utility Machine
+# DO NOT RUN this standalone
+#
+
+
+- name: Attempting to install NFS Storage Provisioner
+  hosts: helper
+  gather_facts: no
+  vars_files:
+    - 'configs/k8s-config.yml'
+    - 'configs/k8s-addons.yml'
+
+  vars:
+    ansible_ssh_private_key_file: ./do-not-delete/ansible_vms_rsa
+
+  tasks:
+    - meta: end_play
+      when: components.install_metallb_loadbalancer == false
+
+    - name: Download MetalLB manifest
+      get_url:
+        url: "{{ metallb_url }}"
+        dest: /tmp
+        force: yes
+
+    - name: Applying MetalLB native manifest
+      k8s:
+        state: present
+        src: /tmp/metallb-native.yaml
+
+    - name: Installing jmespath
+      pip:
+        name: jmespath
+      become: no
+      delegate_to: localhost
+
+    - name: Waiting for pods in the metallb-system to be running
+      shell: |
+        set -o pipefail
+        kubectl get pods -n metallb-system | tail -n4 | awk '{print $3}'
+      args:
+        executable: /bin/bash
+      register: status
+      until: status.stdout_lines | unique | count == 1 and status.stdout_lines[0] == 'Running'
+      retries: 10
+      delay: 15
+
+
+    - name: Allowing time for MetalLB pods to settle
+      pause:
+        seconds: 10 
+
+    - name: Creating IP Address pool for load balancer
+      k8s:
+        state: present
+        definition:
+          apiVersion: metallb.io/v1beta1
+          kind: IPAddressPool
+          metadata:
+            name: apps-ipaddr-pool
+            namespace: metallb-system
+          spec:
+            addresses:
+            - '{{ metallb_ipaddr_pool }}'
+
+    - name: Creating L2 Advertisement
+      k8s:
+        state: present
+        definition:
+          apiVersion: metallb.io/v1beta1
+          kind: L2Advertisement
+          metadata:
+            name: l2ads
+            namespace: metallb-system
+          spec:
+            ipAddressPools:
+            - apps-ipaddr-pool
+
+    - name: Updating application-list.readme
+      lineinfile:
+        line: '[x] MetalLB Load Balancer configured'
+        path: cluster-info.readme
+        create: yes
+      delegate_to: localhost
+      become: no
+
