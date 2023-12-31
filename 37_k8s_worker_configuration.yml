@@ -1,4 +1,4 @@
-# This Playbook creates an in-memory inventory to list all workers nodes
+# This Playbook creates an in-memory inventory to build a list of workers nodes
 # This list will be used in the subsequent play
 #
 # ASSUMPTIONS:
@@ -26,7 +26,6 @@
       when: item.key | regex_search('(master|worker)') in ['worker']
       loop_control:
         label: output
-
 
 
 # Objective is to join all k8s workers to the control plane
@@ -57,3 +56,4 @@
     - name: Joining worker nodes to k8s cluster
       shell: '~/join_workers.sh > /root/workers.log'
       changed_when: true
+
