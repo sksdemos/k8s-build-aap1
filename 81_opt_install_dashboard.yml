@@ -32,6 +32,8 @@
 #
 # ASSUMPTIONS:
 # Will make use of sudo password in the configs/password.yml in clear text
+# Assumes that kubeconfig has been already copied onto the Utility VM
+# DO NOT RUN this playbook standalone
 #
 
 
@@ -48,19 +50,6 @@
   tasks:
     - meta: end_play
       when: components.install_octant_dashboard == false
-
-    - name: Copying kubeconfig resource to helper
-      copy:
-        src: ~/.kube/config
-        dest: /root/.kube/
-        mode: '0644'
-
-    - name: Setting Environment variable for k8s access
-      lineinfile:
-        path: ~/.bashrc
-        line: KUBECONFIG=$HOME/.kube/config
-        create: yes
-        mode: '0644'
 
     - name: Downloading Octant from URL
       yum:
@@ -100,13 +89,6 @@
         owner: "root"
         group: "root"
 
-# NOTES:
-# Systemd service unit was created basis the following command line shell script
-# This was screwed up though as it required to be backgrounded else playbook would not terninate and get stuck
-#   #!/bin/bash
-#   /usr/local/bin/octant --accepted-hosts "0.0.0.0" --disable-open-browser --listener-addr "{{ cloud_vms_info['k8s-helper'].vm_static_ip | ipaddr('address') }}:{{ dashboard_port }}"
-
-
     - name: Generating systemd dependency tree
       systemd:
         daemon_reload: yes  
@@ -127,7 +109,7 @@
 
     - name: Adding Octant URL
       lineinfile:
-        line: '    Access at https://{{ groups.helper[0] }}:{{ octant_port }}'
+        line: '    Access at http://{{ groups.helper[0] }}:{{ octant_port }}'
         path: cluster-info.readme
         create: yes
       delegate_to: localhost
