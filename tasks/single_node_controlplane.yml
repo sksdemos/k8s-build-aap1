@@ -1,34 +1,13 @@
-    - name: Initializing the controlplane using Docker
-      shell: >
-        kubeadm init
-        --apiserver-advertise-address {{ inventory_hostname }}
-        --pod-network-cidr {{ pod_nw_cidr }}
-        --service-cidr {{ service_nw_cidr }} > /root/controlplane.log
-      async: 600
-      poll: 5
-      when: cri == 'docker'
+    - name: Generating kubeadm init commandline
+      template:
+        src: templates/kubeadm_init.j2
+        dest: tasks/kubeadm_init_cmd.yml
+      become: no
+      delegate_to: localhost
 
-    - name: Initializing the controlplane using ContainerD
-      shell: >
-        kubeadm init
-        --apiserver-advertise-address {{ inventory_hostname }}
-        --pod-network-cidr {{ pod_nw_cidr }}
-        --service-cidr {{ service_nw_cidr }}
-        --cri-socket /run/containerd/containerd.sock > /root/controlplane.log
-      async: 600
-      poll: 5
-      when: cri == 'containerd'
-
-    - name: Initializing the controlplane using CRI-O
-      shell: >
-        kubeadm init
-        --apiserver-advertise-address {{ inventory_hostname }}
-        --pod-network-cidr {{ pod_nw_cidr }}
-        --service-cidr {{ service_nw_cidr }}
-        --cri-socket unix:///var/run/crio/crio.sock > /root/controlplane.log
-      async: 600
-      poll: 5
-      when: cri == 'cri-o'
+    - name: Including kubeadm command line
+      include_tasks:
+        file: tasks/kubeadm_init_cmd.yml
 
     - name: Get the token for joining the worker nodes
       shell: kubeadm token create  --print-join-command
