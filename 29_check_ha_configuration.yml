@@ -107,7 +107,7 @@
 #       workers to join
 #
 
-    - name: Updating application-list.readme
+    - name: Updating clusterinfo.readme
       lineinfile:
         line: 'K8s Cluster installation: (HA mode)'
         path: cluster-info.readme
@@ -115,3 +115,10 @@
       delegate_to: localhost
       become: no
 
+    - name: Adding haproxy details cluster-info.readme
+      lineinfile:
+        line: 'Access haproxy on http://{{ ha_virtual_ip }}:{{ haproxy_url_port }} with Auth: {{ haproxy_username }}/{{ haproxy_password }}'
+        path: cluster-info.readme
+        create: yes
+      delegate_to: localhost
+      become: no
