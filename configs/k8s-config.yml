@@ -19,18 +19,26 @@ service_nw_cidr: '172.16.0.0/16'
 
 
 
-#---- virtual ip used by keepalived  ----#
+
+#---------------------------------------------#
+#     Cluster High Availability variables     #
+#---------------------------------------------# 
+
+#---- keepalived related settings ----#
 ha_virtual_ip: 192.168.200.2
 
-# NOTE: This will be the k8s apiserver endpoint configured on the load balancer. Ensure that this IP address matches with the network of the cluster VMS
+# NOTE: The above Virtual IP will be implemented on keepalived. This virtual ip will be used for the k8s apiserver endpoint. 
+#       Ensure that this Virtual IP address matches with the network range of the cluster VMs static ip address
 
 
 
 #---- haproxy related settings ----#
+haproxy_username: admin
+haproxy_password: haproxy
 haproxy_url_port: 5100
 haproxy_apiserver_port: 8443
 
-# NOTE; the above three variables WIll only be used when HA configuration kicks in
+# NOTE: Variables for keepalived and haproxy are only be used when HA configuration kicks in
 
 
 
@@ -78,6 +86,8 @@ version: '1.29'                 # This value must match with the Kubernetes vers
 # Variable to specify container networking addons
 cni_url: https://docs.projectcalico.org/manifests/calico.yaml
 
+cni_addon: cilium
+# NOTES: Defaults to calico, possible values are calico and cilium
 
 # NOTES:
 # This variable is for container networking addons like calico, flannel, weave etc to name a few
@@ -89,8 +99,8 @@ cni_url: https://docs.projectcalico.org/manifests/calico.yaml
 # Calico URL: https://docs.projectcalico.org/manifests/calico.yaml
 # Flannel URL: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
 #
-# Different networking addons may have a different process of setting up that may require modification to the k8s_master_configuration playbook
-# THIS CODEBASE USES CALICO
+# Different networking addons may have a different process of setting up that may require modification to the 41_apply_cni_plugin_to_k8s.yml playbook
+# At present this CODEBASE is designed to work with CILIUM or CALICO
 
 
 
@@ -104,13 +114,16 @@ components:
   install_kubectl_on_host: true
   install_octant_dashboard: true
   install_nfs_storage_provisioner: true
+  install_metrics_server: true
+  install_kube_state_metrics: true
+  install_metallb_loadbalancer: true
+  install_nginx_ingress_controller: true
 
 
 
 
 
 # --- DO NOT EDIT BELOW THIS LINE ---#
+
 ha_cluster: false
-
 # NOTES: Defaults to a false. Playbook will automatically set this to a true when the number of masters >= 3 and in odd numbers
-
